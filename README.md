@@ -6,19 +6,14 @@
 
 一个轻量的 macOS 菜单栏小工具，用来在菜单栏显示 Fear & Greed Index。
 
-## 说明
 ### 功能
 
-- macOS 第三方菜单栏常驻项目会显示在右上角状态区，这是系统限制。
-- 应用每 1 小时自动刷新一次，也支持手动刷新。
-- 菜单栏使用小型分段指标图显示，并在图中叠加一个小数字。
-- 数据源使用 `fear-and-greed-index.p.rapidapi.com/v1/fgi`。
-- 当前版本只依赖 Xcode Command Line Tools，不需要完整 Xcode。
 - 显示在 macOS 右上角菜单栏状态区
 - 使用小型分段指标图显示，并在图中叠加一个小数字
 - 启动时立即拉取一次数据
 - 应用运行期间每 1 小时自动刷新一次
 - 支持菜单内手动刷新
+- 支持在应用菜单中直接设置 API Key
 - 支持安装到 `Applications`
 - 支持登录 macOS 后自动启动
 
@@ -31,7 +26,6 @@
 
 API key 不会写在代码里。应用会按下面顺序读取：
 
-## 运行
 1. 环境变量 `FEAR_GREED_RAPIDAPI_KEY`
 2. 本地配置文件 `~/Library/Application Support/fear-greed-index-for-macos/config.plist`
 
@@ -42,6 +36,8 @@ cd /path/to/fear-greed-index-for-macos
 chmod +x setup-api-key.command
 ./setup-api-key.command
 ```
+
+也可以在应用运行后，从菜单中点击 `Set API Key...` 直接修改。
 
 ### 运行
 
@@ -54,35 +50,47 @@ chmod +x setup-api-key.command run.sh
 
 `run.sh` 会先调用 `build-app.sh` 生成 `.app`，再直接打开它。整个流程使用 `clang` 编译 `main.m`，只依赖 Xcode Command Line Tools。
 
-启动后，你会在菜单栏看到一个小型分段 gauge 指标图，图中会叠加一个小数字；点开菜单可以查看完整数值和分类。
-
-API key 不再写在代码里。应用会优先读取环境变量 `FEAR_GREED_RAPIDAPI_KEY`，其次读取 `~/Library/Application Support/fear-greed-index-for-macos/config.plist`。
-
-## 打包
 ### 打包
 
 ```bash
 cd /path/to/fear-greed-index-for-macos
+chmod +x build-app.sh
+./build-app.sh
+open "./dist/fear-greed-index-for-macos.app"
+```
+
+打包脚本会：
+
+- 用 `clang` 直接编译 `main.m`
+- 生成标准 `.app` 目录结构
+- 自动生成 Fear & Greed 风格应用图标
 - 写入 `Info.plist`
 - 尝试做一次 ad-hoc 签名，减少本地启动阻碍
 
-## 一键安装
 ### 安装到 Applications
 
 你也可以直接双击 `install-to-Applications.command`。
 
+它会自动：
+
+- 先执行打包脚本
+- 请求管理员权限复制到 `/Applications`
+- 替换旧版本
 - 去掉隔离属性
 - 安装完成后自动打开应用
 
-## 开机自启
 ### 开机自启
 
 安装到 `Applications` 后，可以执行：
 
+```bash
+cd /path/to/fear-greed-index-for-macos
+chmod +x enable-login-launch.command disable-login-launch.command
+./enable-login-launch.command
+```
 
 这会在 `~/Library/LaunchAgents` 下创建一个 LaunchAgent，让应用在登录 macOS 时自动启动。
 
-如果要关闭开机自启：
 关闭开机自启：
 
 ```bash
@@ -90,8 +98,6 @@ cd /path/to/fear-greed-index-for-macos
 ./disable-login-launch.command
 ```
 
-如果你后面想继续做成正式可分发版本，也可以再迁回 Xcode 工程，做归档、签名和公证。
-# fear-greed-index-for-macos
 ## English
 
 A lightweight macOS menu bar app that shows the Fear & Greed Index.
@@ -103,6 +109,7 @@ A lightweight macOS menu bar app that shows the Fear & Greed Index.
 - Fetches data immediately on launch
 - Automatically refreshes once every hour while the app is running
 - Supports manual refresh from the menu
+- Lets you update the API key directly from the app menu
 - Can be installed into `Applications`
 - Supports launching automatically at login
 
@@ -125,6 +132,8 @@ cd /path/to/fear-greed-index-for-macos
 chmod +x setup-api-key.command
 ./setup-api-key.command
 ```
+
+You can also change it later from the app menu with `Set API Key...`.
 
 ### Run
 
@@ -150,6 +159,7 @@ The build script:
 
 - Compiles `main.m` with `clang`
 - Creates a standard `.app` bundle structure
+- Automatically generates a Fear & Greed style app icon
 - Writes `Info.plist`
 - Applies ad-hoc signing when available
 
@@ -183,4 +193,3 @@ To disable launch at login:
 cd /path/to/fear-greed-index-for-macos
 ./disable-login-launch.command
 ```
-huangdanyang@Dans-MacBook-Air fear-greed-index-for-macos % git add README.m

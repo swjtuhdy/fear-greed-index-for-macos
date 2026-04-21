@@ -73,3 +73,4 @@ cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
 ```
 
 如果你后面想继续做成正式可分发版本，也可以再迁回 Xcode 工程，做归档、签名和公证。
+# fear-greed-index-for-macos

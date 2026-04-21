@@ -16,6 +16,8 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 @end
 
 @interface FearGreedService : NSObject
+- (NSString *)apiKey;
+- (BOOL)saveAPIKey:(NSString *)apiKey error:(NSError **)error;
 - (void)fetchLatestQuoteWithCompletion:(void (^)(SentimentQuote *quote, NSError *error))completion;
 @end
 
@@ -28,6 +30,13 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 
 @implementation FearGreedService
 
+- (NSURL *)configURL {
+    NSArray<NSURL *> *appSupportURLs =
+        [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
+    NSURL *appSupportURL = appSupportURLs.firstObject;
+    return [[appSupportURL URLByAppendingPathComponent:kAppIdentifier] URLByAppendingPathComponent:@"config.plist"];
+}
+
 - (NSString *)apiKey {
     const char *environmentKey = getenv("FEAR_GREED_RAPIDAPI_KEY");
     if (environmentKey != NULL) {
@@ -37,10 +46,7 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
         }
     }
 
-    NSArray<NSURL *> *appSupportURLs =
-        [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask];
-    NSURL *appSupportURL = appSupportURLs.firstObject;
-    NSURL *configURL = [[appSupportURL URLByAppendingPathComponent:kAppIdentifier] URLByAppendingPathComponent:@"config.plist"];
+    NSURL *configURL = [self configURL];
     NSDictionary *config = [NSDictionary dictionaryWithContentsOfURL:configURL];
     NSString *fileValue = [config[@"rapidapi_key"] isKindOfClass:[NSString class]] ? config[@"rapidapi_key"] : nil;
     if (fileValue.length > 0) {
@@ -48,6 +54,36 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
     }
 
     return nil;
+}
+
+- (BOOL)saveAPIKey:(NSString *)apiKey error:(NSError **)error {
+    NSURL *configURL = [self configURL];
+    NSURL *directoryURL = [configURL URLByDeletingLastPathComponent];
+
+    if (![[NSFileManager defaultManager] createDirectoryAtURL:directoryURL
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:error]) {
+        return NO;
+    }
+
+    if (apiKey.length == 0) {
+        if ([[NSFileManager defaultManager] fileExistsAtPath:configURL.path]) {
+            return [[NSFileManager defaultManager] removeItemAtURL:configURL error:error];
+        }
+        return YES;
+    }
+
+    NSDictionary *config = @{@"rapidapi_key": apiKey};
+    NSData *plistData = [NSPropertyListSerialization dataWithPropertyList:config
+                                                                   format:NSPropertyListXMLFormat_v1_0
+                                                                  options:0
+                                                                    error:error];
+    if (plistData == nil) {
+        return NO;
+    }
+
+    return [plistData writeToURL:configURL options:NSDataWritingAtomic error:error];
 }
 
 - (void)fetchLatestQuoteWithCompletion:(void (^)(SentimentQuote *quote, NSError *error))completion {
@@ -104,8 +140,9 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 
         NSDictionary *root = (NSDictionary *)json;
         NSDictionary *fgi = [root[@"fgi"] isKindOfClass:[NSDictionary class]] ? root[@"fgi"] : root;
+        NSDictionary *current = [fgi[@"now"] isKindOfClass:[NSDictionary class]] ? fgi[@"now"] : fgi;
 
-        NSNumber *score = [self parseScoreFromJSON:fgi];
+        NSNumber *score = [self parseScoreFromJSON:current];
         if (score == nil) {
             NSError *missingError = [NSError errorWithDomain:@"FearGreedMenuBar"
                                                         code:1004
@@ -116,8 +153,8 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 
         SentimentQuote *quote = [[SentimentQuote alloc] init];
         quote.value = score;
-        quote.classification = [self parseClassificationFromJSON:fgi] ?: [self classificationForScore:score.doubleValue];
-        quote.timestamp = [self parseTimestampFromJSON:fgi] ?: [NSDate date];
+        quote.classification = [self parseClassificationFromJSON:current] ?: [self classificationForScore:score.doubleValue];
+        quote.timestamp = [self parseTimestampFromJSON:root] ?: [NSDate date];
 
         completion(quote, nil);
     }];
@@ -138,7 +175,7 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 }
 
 - (NSString *)parseClassificationFromJSON:(NSDictionary *)json {
-    NSArray<NSString *> *candidateKeys = @[@"rating", @"classification", @"label", @"status", @"sentiment"];
+    NSArray<NSString *> *candidateKeys = @[@"valueText", @"rating", @"classification", @"label", @"status", @"sentiment"];
     for (NSString *key in candidateKeys) {
         id value = json[key];
         if ([value isKindOfClass:[NSString class]] && ((NSString *)value).length > 0) {
@@ -149,6 +186,14 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 }
 
 - (NSDate *)parseTimestampFromJSON:(NSDictionary *)json {
+    NSDictionary *lastUpdated = [json[@"lastUpdated"] isKindOfClass:[NSDictionary class]] ? json[@"lastUpdated"] : nil;
+    if (lastUpdated != nil) {
+        id epochValue = lastUpdated[@"epochUnixSeconds"];
+        if ([epochValue isKindOfClass:[NSNumber class]]) {
+            return [NSDate dateWithTimeIntervalSince1970:[(NSNumber *)epochValue doubleValue]];
+        }
+    }
+
     NSArray<NSString *> *candidateKeys = @[@"timestamp", @"updated_at", @"updatedAt", @"last_update"];
     for (NSString *key in candidateKeys) {
         id value = json[key];
@@ -225,6 +270,7 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 @property (nonatomic, strong) NSMenuItem *classificationItem;
 @property (nonatomic, strong) NSMenuItem *updatedAtItem;
 @property (nonatomic, strong) NSMenuItem *sourceItem;
+@property (nonatomic, strong) NSMenuItem *apiKeyItem;
 @property (nonatomic, strong) NSTimer *refreshTimer;
 @property (nonatomic, strong) FearGreedService *service;
 @property (nonatomic, strong) NSDateFormatter *dateFormatter;
@@ -266,6 +312,12 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
     [self.statusMenu addItem:self.updatedAtItem];
     [self.statusMenu addItem:self.sourceItem];
     [self.statusMenu addItem:[NSMenuItem separatorItem]];
+
+    self.apiKeyItem = [[NSMenuItem alloc] initWithTitle:@"Set API Key..."
+                                                 action:@selector(handleSetAPIKey:)
+                                          keyEquivalent:@"k"];
+    self.apiKeyItem.target = self;
+    [self.statusMenu addItem:self.apiKeyItem];
 
     NSMenuItem *refreshItem = [[NSMenuItem alloc] initWithTitle:@"Refresh Now"
                                                          action:@selector(handleManualRefresh:)
@@ -311,6 +363,7 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
     self.statusItem.button.toolTip = @"Fear & Greed Index: Loading...";
     self.currentValueItem.title = @"Fear & Greed: Loading...";
     self.classificationItem.title = @"Classification: --";
+    self.updatedAtItem.title = @"Updated: --";
 }
 
 - (void)applyQuote:(SentimentQuote *)quote {
@@ -422,6 +475,51 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 }
 
 - (void)handleManualRefresh:(id)sender {
+    [self refresh];
+}
+
+- (void)handleSetAPIKey:(id)sender {
+    [NSApp activateIgnoringOtherApps:YES];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = @"Set RapidAPI Key";
+    alert.informativeText = @"Paste your Fear & Greed RapidAPI key. The clipboard value will be prefilled when available. Leave it empty to remove the saved key.";
+    [alert addButtonWithTitle:@"Save"];
+    [alert addButtonWithTitle:@"Cancel"];
+
+    NSTextField *textField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 0, 360, 24)];
+    textField.placeholderString = @"RapidAPI key";
+    NSString *existingKey = [self.service apiKey];
+    if (existingKey.length > 0) {
+        textField.stringValue = existingKey;
+    }
+
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    NSString *clipboardString = [pasteboard stringForType:NSPasteboardTypeString];
+    if (clipboardString.length > 0 &&
+        [clipboardString rangeOfString:@" "].location == NSNotFound &&
+        [clipboardString rangeOfString:@"\n"].location == NSNotFound &&
+        [clipboardString rangeOfString:@"\t"].location == NSNotFound) {
+        textField.stringValue = clipboardString;
+    }
+
+    alert.accessoryView = textField;
+
+    NSModalResponse response = [alert runModal];
+    if (response != NSAlertFirstButtonReturn) {
+        return;
+    }
+
+    NSError *saveError = nil;
+    if (![self.service saveAPIKey:textField.stringValue error:&saveError]) {
+        NSAlert *errorAlert = [[NSAlert alloc] init];
+        errorAlert.messageText = @"Failed to save API key";
+        errorAlert.informativeText = saveError.localizedDescription ?: @"Unknown error";
+        [errorAlert addButtonWithTitle:@"OK"];
+        [errorAlert runModal];
+        return;
+    }
+
     [self refresh];
 }
 

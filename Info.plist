@@ -8,6 +8,8 @@
     <string>fear-greed-index-for-macos</string>
     <key>CFBundleExecutable</key>
     <string>fear-greed-index-for-macos</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>com.local.fear-greed-index-for-macos</string>
     <key>CFBundleInfoDictionaryVersion</key>

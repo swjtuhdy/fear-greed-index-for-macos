@@ -13,13 +13,13 @@
 ## 运行
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/VIXMenuBar"
+cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
 chmod +x setup-api-key.command run.sh
 ./setup-api-key.command
 ./run.sh
 ```
 
-`run.sh` 现在会先调用 [build-app.sh](/Users/huangdanyang/Documents/New project/VIXMenuBar/build-app.sh:1) 生成 `.app`，再直接打开它。整个流程使用 `clang` 编译 [main.m](/Users/huangdanyang/Documents/New project/VIXMenuBar/main.m:1)，只依赖 Xcode Command Line Tools。
+`run.sh` 现在会先调用 [build-app.sh](/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos/build-app.sh:1) 生成 `.app`，再直接打开它。整个流程使用 `clang` 编译 [main.m](/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos/main.m:1)，只依赖 Xcode Command Line Tools。
 
 启动后，你会在菜单栏看到一个小型分段 gauge 指标图，图中会叠加一个小数字；点开菜单可以查看完整数值和分类。
 
@@ -28,7 +28,7 @@ API key 不再写在代码里。应用会优先读取环境变量 `FEAR_GREED_RA
 ## 打包
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/VIXMenuBar"
+cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
 chmod +x build-app.sh
 ./build-app.sh
 open "./dist/fear-greed-index-for-macos.app"
@@ -36,14 +36,14 @@ open "./dist/fear-greed-index-for-macos.app"
 
 打包脚本会：
 
-- 用 `clang` 直接编译 [main.m](/Users/huangdanyang/Documents/New project/VIXMenuBar/main.m:1)
+- 用 `clang` 直接编译 [main.m](/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos/main.m:1)
 - 生成标准 `.app` 目录结构
-- 写入 [Info.plist](/Users/huangdanyang/Documents/New project/VIXMenuBar/Info.plist:1)
+- 写入 [Info.plist](/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos/Info.plist:1)
 - 尝试做一次 ad-hoc 签名，减少本地启动阻碍
 
 ## 一键安装
 
-你也可以直接双击 [install-to-Applications.command](/Users/huangdanyang/Documents/New project/VIXMenuBar/install-to-Applications.command:1)。
+你也可以直接双击 [install-to-Applications.command](/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos/install-to-Applications.command:1)。
 
 它会自动：
 
@@ -58,7 +58,7 @@ open "./dist/fear-greed-index-for-macos.app"
 安装到 `Applications` 后，可以执行：
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/VIXMenuBar"
+cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
 chmod +x enable-login-launch.command disable-login-launch.command
 ./enable-login-launch.command
 ```
@@ -68,7 +68,7 @@ chmod +x enable-login-launch.command disable-login-launch.command
 如果要关闭开机自启：
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/VIXMenuBar"
+cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
 ./disable-login-launch.command
 ```
 

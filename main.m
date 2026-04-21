@@ -268,7 +268,8 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 @property (nonatomic, strong) NSMenu *statusMenu;
 @property (nonatomic, strong) NSMenuItem *currentValueItem;
 @property (nonatomic, strong) NSMenuItem *classificationItem;
-@property (nonatomic, strong) NSMenuItem *updatedAtItem;
+@property (nonatomic, strong) NSMenuItem *refreshedAtItem;
+@property (nonatomic, strong) NSMenuItem *sourceUpdatedAtItem;
 @property (nonatomic, strong) NSMenuItem *sourceItem;
 @property (nonatomic, strong) NSMenuItem *apiKeyItem;
 @property (nonatomic, strong) NSTimer *refreshTimer;
@@ -303,13 +304,15 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
 
     self.currentValueItem = [[NSMenuItem alloc] initWithTitle:@"Fear & Greed: --" action:nil keyEquivalent:@""];
     self.classificationItem = [[NSMenuItem alloc] initWithTitle:@"Classification: --" action:nil keyEquivalent:@""];
-    self.updatedAtItem = [[NSMenuItem alloc] initWithTitle:@"Updated: --" action:nil keyEquivalent:@""];
+    self.refreshedAtItem = [[NSMenuItem alloc] initWithTitle:@"Refreshed: --" action:nil keyEquivalent:@""];
+    self.sourceUpdatedAtItem = [[NSMenuItem alloc] initWithTitle:@"Source Updated: --" action:nil keyEquivalent:@""];
     self.sourceItem = [[NSMenuItem alloc] initWithTitle:@"Source: fear-and-greed-index.p.rapidapi.com/v1/fgi" action:nil keyEquivalent:@""];
 
     self.statusMenu = [[NSMenu alloc] init];
     [self.statusMenu addItem:self.currentValueItem];
     [self.statusMenu addItem:self.classificationItem];
-    [self.statusMenu addItem:self.updatedAtItem];
+    [self.statusMenu addItem:self.refreshedAtItem];
+    [self.statusMenu addItem:self.sourceUpdatedAtItem];
     [self.statusMenu addItem:self.sourceItem];
     [self.statusMenu addItem:[NSMenuItem separatorItem]];
 
@@ -363,16 +366,19 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
     self.statusItem.button.toolTip = @"Fear & Greed Index: Loading...";
     self.currentValueItem.title = @"Fear & Greed: Loading...";
     self.classificationItem.title = @"Classification: --";
-    self.updatedAtItem.title = @"Updated: --";
+    self.refreshedAtItem.title = @"Refreshed: --";
+    self.sourceUpdatedAtItem.title = @"Source Updated: --";
 }
 
 - (void)applyQuote:(SentimentQuote *)quote {
     NSInteger roundedValue = (NSInteger)llround(quote.value.doubleValue);
+    NSDate *now = [NSDate date];
     self.statusItem.button.image = [self gaugeImageForValue:quote.value.doubleValue classification:quote.classification];
     self.statusItem.button.toolTip = [NSString stringWithFormat:@"Fear & Greed: %ld (%@)", (long)roundedValue, quote.classification];
     self.currentValueItem.title = [NSString stringWithFormat:@"Fear & Greed: %ld / 100", (long)roundedValue];
     self.classificationItem.title = [NSString stringWithFormat:@"Classification: %@", quote.classification];
-    self.updatedAtItem.title = [NSString stringWithFormat:@"Updated: %@", [self.dateFormatter stringFromDate:quote.timestamp]];
+    self.refreshedAtItem.title = [NSString stringWithFormat:@"Refreshed: %@", [self.dateFormatter stringFromDate:now]];
+    self.sourceUpdatedAtItem.title = [NSString stringWithFormat:@"Source Updated: %@", [self.dateFormatter stringFromDate:quote.timestamp]];
 }
 
 - (void)applyError:(NSError *)error {
@@ -380,7 +386,8 @@ static NSString * const kAppIdentifier = @"fear-greed-index-for-macos";
     self.statusItem.button.toolTip = [NSString stringWithFormat:@"Fear & Greed failed: %@", error.localizedDescription ?: @"Unknown error"];
     self.currentValueItem.title = @"Fear & Greed: Failed to load";
     self.classificationItem.title = @"Classification: --";
-    self.updatedAtItem.title = @"Updated: --";
+    self.refreshedAtItem.title = @"Refreshed: --";
+    self.sourceUpdatedAtItem.title = @"Source Updated: --";
 }
 
 - (NSImage *)gaugeImageForValue:(double)value classification:(NSString *)classification {

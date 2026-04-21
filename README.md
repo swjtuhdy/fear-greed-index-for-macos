@@ -12,7 +12,7 @@
 ## 运行
 
 ```bash
-cd "/Users/path/to/fear-greed-index-for-macos"
+cd "/path/to/fear-greed-index-for-macos"
 chmod +x setup-api-key.command run.sh
 ./setup-api-key.command
 ./run.sh
@@ -27,7 +27,7 @@ chmod +x setup-api-key.command run.sh
 可以执行：
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
+cd "/path/to/fear-greed-index-for-macos"
 chmod +x enable-login-launch.command disable-login-launch.command
 ./enable-login-launch.command
 ```
@@ -37,7 +37,7 @@ chmod +x enable-login-launch.command disable-login-launch.command
 如果要关闭开机自启：
 
 ```bash
-cd "/Users/huangdanyang/Documents/New project/fear-greed-index-for-macos"
+cd "/path/to/fear-greed-index-for-macos"
 ./disable-login-launch.command
 ```
 
